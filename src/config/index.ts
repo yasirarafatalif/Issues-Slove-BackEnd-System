@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+
 import path from "path";
 dotenv.config({ quiet: true });
 dotenv.config({
@@ -8,6 +9,6 @@ dotenv.config({
 export const config = {
   connection_string: process.env.CONNECTIONSTRING as string,
   port: process.env.PORT,
-  secret: process.env.JWT_SECRET,
+  accessToken: process.env.JWT_SECRET,
   node_env: process.env.NODE,
 };

@@ -5,9 +5,17 @@ export const USER_ROLE = {
 
 export type ROLES = (typeof USER_ROLE)[keyof typeof USER_ROLE];
 
+
 export type User = {
   name: string;
   password: string;
   role?: ROLES;
   email: string;
+};
+
+export type JwtPayloadType = {
+  id: number;
+  name: string;
+  email: string;
+  role: ROLES;
 };
