@@ -13,12 +13,19 @@ const singup = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const reuslt = await authServices.loginIntoDb(req.body);
   const { id, name, email, role } = reuslt;
-  const { accessToken } = signToken({ id, name, email, role });
+  const { accessToken ,refreshToken} = signToken({ id, name, email, role });
+
+  res.cookie("refreshToken", refreshToken, {
+    secure: false,
+    httpOnly: true,
+    sameSite: "lax",
+  });
+
   res.status(201).json({
     success: true,
     message: "Login successful",
     data: {
-      token: accessToken,
+      token: refreshToken,
       user: reuslt,
     },
   });

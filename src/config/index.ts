@@ -11,4 +11,5 @@ export const config = {
   port: process.env.PORT,
   accessToken: process.env.JWT_SECRET,
   node_env: process.env.NODE,
+  refresh_secret: process.env.RWT_SECRE
 };
