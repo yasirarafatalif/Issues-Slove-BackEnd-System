@@ -1,8 +1,12 @@
 import { sql } from "../../db";
 import type { Issue } from "./issues.interface";
 
-const issuesCreateIntoDB = async (payload: Issue) => {
+const issuesCreateIntoDB = async (payload: Issue ,id:number) => {
   const { title, description, type } = payload;
+
+  const userId = id;
+ 
+
 
   // try to implement repoter_id from jwt token in header
   const result = await sql`
@@ -10,13 +14,15 @@ const issuesCreateIntoDB = async (payload: Issue) => {
     title,
     description,
     type,
-    status
+    status,
+    reporter_id
   ) VALUES (
     ${title},
     ${description},
     ${type},
-    'open'
-  ) RETURNING id, title, description, type, status, created_at, updated_at
+    'in_progress',
+    ${userId}
+  ) RETURNING id, title, description, type, status, reporter_id, created_at, updated_at
   `;
   if (!result) {
     throw new Error("Failed to create issue");

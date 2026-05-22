@@ -11,3 +11,10 @@ export const signToken = (payload: JwtPayloadType) => {
   });
   return { accessToken,refreshToken };
 };
+
+
+export const verifyToken = (token: string, type: "access" | "refresh") => {
+  const secret = type === "refresh" ? config.refresh_secret : config.accessToken;
+  const decoded = jwt.verify(token, secret as string) as JwtPayload;
+  return decoded;
+};
