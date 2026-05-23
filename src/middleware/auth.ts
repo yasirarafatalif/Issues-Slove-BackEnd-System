@@ -2,8 +2,9 @@ import type { NextFunction, Request, Response } from "express";
 import type { ROLES } from "../types";
 import { verifyToken } from "../utils/jwt";
 import { sql } from "../db";
+import { sendResponse } from "../utils/sendResponse";
 
-const authMiddleware = (...roles: ROLES[]) => {
+export const authMiddleware = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // const refreshToken = req.cookies?.refreshToken;
@@ -47,4 +48,16 @@ const authMiddleware = (...roles: ROLES[]) => {
   };
 };
 
-export default authMiddleware;
+export const authorizeRoles = (...roles: ROLES[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return sendResponse(res, 403, false, "User Not Found");
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return sendResponse(res, 403, false, "Forbiden Access");
+    }
+
+    return next();
+  };
+};

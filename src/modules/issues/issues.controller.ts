@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { issuesService } from "./issues.services";
+import { sendResponse } from "../../utils/sendResponse";
 
 const issuesGetController = async (req: Request, res: Response) => {
   const result = await issuesService.issuesGetIntoDb();
@@ -36,17 +37,8 @@ const issueUpdateController = async (req: Request, res: Response) => {
 const issueDeleteController = async (req: Request, res: Response) => {
   const user = req.user;
   const { id } = req.params;
-  if (user?.role !== "maintainer") {
-    res.status(403).json({
-      success: true,
-      message: "You can't delete this issues",
-    });
-  }
   const result = await issuesService.issuesDeleteIntoDb(id as string);
-  res.status(201).json({
-    success: true,
-    message: "Issue deleted successfully",
-  });
+  return sendResponse(res,201,true,"Issue deleted successfully")
 };
 
 export const issuesController = {
