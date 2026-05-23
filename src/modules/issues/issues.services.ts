@@ -170,7 +170,28 @@ const issuesUpdateIntoDb = async (payload: Issue, id: string, user: any) => {
 
   throw new Error("Invalid role.");
 };
-const issuesDeleteIntoDb = async () => {};
+const issuesDeleteIntoDb = async (id: string) => {
+  const issueId = Number(id);
+
+
+  if (isNaN(issueId)) {
+    throw new Error("Invalid issue id.");
+  }
+
+
+  const deletedIssue = await sql`
+    DELETE FROM orders
+    WHERE id = ${issueId}
+    RETURNING *
+  `;
+
+
+  if (deletedIssue.length === 0) {
+    throw new Error("Issue not found. Unable to delete the issue.");
+  }
+
+  return deletedIssue[0];
+};
 
 export const issuesService = {
   issuesCreateIntoDB,
