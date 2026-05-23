@@ -1,5 +1,7 @@
 import { sql } from "../../db";
-import type { Issue } from "./issues.interface";
+import { USER_ROLE } from "../../types";
+
+import type { Issue, IUser } from "./issues.interface";
 
 const issuesCreateIntoDB = async (payload: Issue, id: number) => {
   const { title, description, type } = payload;
@@ -65,9 +67,9 @@ const issuesGetIntoDb = async () => {
   return data;
 };
 
-const issuesGetSingelIntoDb = async (id:string)=>{
+const issuesGetSingelIntoDb = async (id: string) => {
   const productId = Number(id);
-   const result = await sql`
+  const result = await sql`
   SELECT 
     orders.id,
     orders.title,
@@ -102,13 +104,78 @@ const issuesGetSingelIntoDb = async (id:string)=>{
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
- 
+
   return data;
-  
-}
+};
+
+const issuesUpdateIntoDb = async (payload: Issue, id: string, user: any) => {
+  const issueId = Number(id);
+
+  const { id: userId, role } = user;
+
+  // Find Issue
+  const findIssue = await sql`
+    SELECT *
+    FROM orders
+    WHERE id = ${issueId}
+  `;
+
+  const issue = findIssue[0];
+
+  if (!issue) {
+    throw new Error("Issue not found.");
+  }
+
+  // contributor
+  if (role === USER_ROLE.contributor) {
+    if (issue.reporter_id !== userId) {
+      throw new Error("Access denied.");
+    }
+
+    if (issue.status !== "open") {
+      throw new Error("Only open issues can be updated.");
+    }
+
+    const { title, description, type } = payload;
+
+    const updatedIssue = await sql`
+      UPDATE orders
+      SET
+        title = ${title},
+        description = ${description},
+        type = ${type}
+      WHERE id = ${issueId}
+      RETURNING *
+    `;
+
+    return updatedIssue[0];
+  }
+
+  if (role === USER_ROLE.maintainer) {
+    const { title, description, type, status } = payload;
+
+    const updatedIssue = await sql`
+      UPDATE orders
+      SET
+        title = ${title},
+        description = ${description},
+        type = ${type},
+        status = ${status}
+      WHERE id = ${issueId}
+      RETURNING *
+    `;
+
+    return updatedIssue[0];
+  }
+
+  throw new Error("Invalid role.");
+};
+const issuesDeleteIntoDb = async () => {};
 
 export const issuesService = {
   issuesCreateIntoDB,
   issuesGetIntoDb,
-  issuesGetSingelIntoDb
+  issuesGetSingelIntoDb,
+  issuesDeleteIntoDb,
+  issuesUpdateIntoDb,
 };
