@@ -3,7 +3,8 @@ import { issuesService } from "./issues.services";
 import { sendResponse } from "../../utils/sendResponse";
 
 const issuesGetController = async (req: Request, res: Response) => {
-  const result = await issuesService.issuesGetIntoDb();
+
+  const result = await issuesService.issuesGetIntoDb(req.query);
   res.status(200).json({
     success: true,
     message: "Issue created successfully",
@@ -12,7 +13,6 @@ const issuesGetController = async (req: Request, res: Response) => {
 };
 const issuesGetSingelController = async (req: Request, res: Response) => {
   const { id } = req.params;
-  console.log(typeof id);
   const result = await issuesService.issuesGetSingelIntoDb(id as string);
   res.status(200).json({ success: true, data: result });
 };

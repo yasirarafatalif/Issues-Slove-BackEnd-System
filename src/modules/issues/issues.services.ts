@@ -1,7 +1,112 @@
 import { sql } from "../../db";
 import { USER_ROLE } from "../../types";
 
-import type { Issue, IUser } from "./issues.interface";
+import type { Issue, IUser, Query } from "./issues.interface";
+
+const issuesGetIntoDb = async (query: Query) => {
+  const { sort = "newest", type, status } = query;
+  console.log(type)
+  // const sortType = sort==="newest"? "DESC" :"ASC";
+
+//   const result = await sql`
+//   SELECT 
+//     orders.id,
+//     orders.title,
+//     orders.description,
+//     orders.type,
+//     orders.status,
+//     orders.created_at,
+//     orders.updated_at,
+
+//     users.id AS reporter_id,
+//     users.name AS reporter_name,
+//     users.role AS reporter_role
+
+//   FROM orders
+//   JOIN users
+//   ON orders.reporter_id = users.id
+//   ${
+//     type
+//       ? sql`WHERE orders.type = ${type}`
+//       : sql``
+//   }
+//   ${
+//     status
+//       ? sql`WHERE orders.status = ${status}`
+//       : sql``
+//   }
+
+
+//   ORDER BY orders.created_at ${
+//     sort === "newest" ? sql`DESC` : sql`ASC`
+//   }
+// `;
+
+const result = await sql`
+  SELECT 
+    orders.id,
+    orders.title,
+    orders.description,
+    orders.type,
+    orders.status,
+    orders.created_at,
+    orders.updated_at,
+
+    users.id AS reporter_id,
+    users.name AS reporter_name,
+    users.role AS reporter_role
+
+  FROM orders
+  JOIN users
+  ON orders.reporter_id = users.id
+
+  ${
+    type || status
+      ? sql`WHERE`
+      : sql``
+  }
+
+  ${
+    type
+      ? sql`orders.type = ${type}`
+      : sql``
+  }
+
+  ${
+    type && status
+      ? sql`AND`
+      : sql``
+  }
+
+  ${
+    status
+      ? sql`orders.status = ${status}`
+      : sql``
+  }
+
+  ORDER BY orders.created_at ${
+    sort === "newest" ? sql`DESC` : sql`ASC`
+  }
+`;
+
+  const data = result.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    type: item.type,
+    status: item.status,
+
+    reporter: {
+      id: item.reporter_id,
+      name: item.reporter_name,
+      role: item.reporter_role,
+    },
+
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  }));
+  return data;
+};
 
 const issuesCreateIntoDB = async (payload: Issue, id: number) => {
   const { title, description, type } = payload;
@@ -28,43 +133,6 @@ const issuesCreateIntoDB = async (payload: Issue, id: number) => {
     throw new Error("Failed to create issue");
   }
   return result[0];
-};
-
-const issuesGetIntoDb = async () => {
-  const result = await sql`
-  SELECT 
-    orders.id,
-    orders.title,
-    orders.description,
-    orders.type,
-    orders.status,
-    orders.created_at,
-    orders.updated_at,
-
-    users.id AS reporter_id,
-    users.name AS reporter_name,
-    users.role AS reporter_role
-    FROM orders
-    JOIN users
-    ON orders.reporter_id = users.id
-  `;
-  const data = result.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    type: item.type,
-    status: item.status,
-
-    reporter: {
-      id: item.reporter_id,
-      name: item.reporter_name,
-      role: item.reporter_role,
-    },
-
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-  }));
-  return data;
 };
 
 const issuesGetSingelIntoDb = async (id: string) => {
@@ -173,18 +241,15 @@ const issuesUpdateIntoDb = async (payload: Issue, id: string, user: any) => {
 const issuesDeleteIntoDb = async (id: string) => {
   const issueId = Number(id);
 
-
   if (isNaN(issueId)) {
     throw new Error("Invalid issue id.");
   }
-
 
   const deletedIssue = await sql`
     DELETE FROM orders
     WHERE id = ${issueId}
     RETURNING *
   `;
-
 
   if (deletedIssue.length === 0) {
     throw new Error("Issue not found. Unable to delete the issue.");
