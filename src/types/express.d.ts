@@ -3,7 +3,7 @@ import type { ROLES } from "./index";
 declare global {
   namespace Express {
     interface Request {
-      user?: {
+      user: {
         id: number;
         name: string;
         email: string;

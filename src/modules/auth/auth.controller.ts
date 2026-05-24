@@ -1,31 +1,26 @@
 import type { Request, Response } from "express";
 import { authServices } from "./auth.services";
 import { signToken } from "../../utils/jwt";
+import { sendResponse } from "../../utils/sendResponse";
 
 const singup = async (req: Request, res: Response) => {
-  const reuslt = await authServices.singUpIntoDb(req.body);
-  res.status(201).json({
-    success: true,
-    message: "User registered successfully",
-    data: reuslt,
-  });
+  const reuslt = await authServices.singUpService(req.body);
+  sendResponse(res, 201, true, "User registered successfully", reuslt);
 };
 const login = async (req: Request, res: Response) => {
-  const reuslt = await authServices.loginIntoDb(req.body);
+  const reuslt = await authServices.loginService(req.body);
   const { id, name, email, role } = reuslt;
-  const { accessToken ,refreshToken} = signToken({ id, name, email, role });
+  const { accessToken, refreshToken } = signToken({ id, name, email, role });
 
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie("accessToken", accessToken, {
     secure: false,
     httpOnly: true,
     sameSite: "lax",
   });
 
-  res.status(200).json({
-    success: true,
-    message: "Login successful",
+  sendResponse(res, 200, true, "Login successful", {
     data: {
-      token: refreshToken,
+      token: accessToken,
       user: reuslt,
     },
   });

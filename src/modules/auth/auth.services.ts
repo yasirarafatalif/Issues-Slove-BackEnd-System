@@ -3,7 +3,7 @@ import {type ROLES, type User } from "../../types";
 import type { LogInUser } from "./auth.interface";
 import bcrypt from "bcrypt";
 
-const singUpIntoDb = async (payload: User) => {
+const singUpService = async (payload: User) => {
   const { email, password, role, name } = payload;
   const hashPassword = bcrypt.hashSync(password, 10);
   const roles: ROLES[] = ["maintainer", "contributor"];
@@ -17,7 +17,7 @@ const singUpIntoDb = async (payload: User) => {
   return result[0];
 };
 
-const loginIntoDb = async (payload: LogInUser) => {
+const loginService = async (payload: LogInUser) => {
   const { email, password } = payload;
   const findUser = await sql`
     SELECT * FROM users WHERE email = ${email}
@@ -35,6 +35,6 @@ const loginIntoDb = async (payload: LogInUser) => {
 };
 
 export const authServices = {
-  singUpIntoDb,
-  loginIntoDb,
+  singUpService,
+  loginService,
 };

@@ -5,89 +5,101 @@ import type { Issue, IUser, Query } from "./issues.interface";
 
 const issuesGetIntoDb = async (query: Query) => {
   const { sort = "newest", type, status } = query;
-  console.log(type)
   // const sortType = sort==="newest"? "DESC" :"ASC";
 
-//   const result = await sql`
-//   SELECT 
-//     orders.id,
-//     orders.title,
-//     orders.description,
-//     orders.type,
-//     orders.status,
-//     orders.created_at,
-//     orders.updated_at,
+  let result;
 
-//     users.id AS reporter_id,
-//     users.name AS reporter_name,
-//     users.role AS reporter_role
+  if (type && status) {
+    result = await sql`
+    SELECT 
+      orders.id,
+      orders.title,
+      orders.description,
+      orders.type,
+      orders.status,
+      orders.created_at,
+      orders.updated_at,
 
-//   FROM orders
-//   JOIN users
-//   ON orders.reporter_id = users.id
-//   ${
-//     type
-//       ? sql`WHERE orders.type = ${type}`
-//       : sql``
-//   }
-//   ${
-//     status
-//       ? sql`WHERE orders.status = ${status}`
-//       : sql``
-//   }
+      users.id AS reporter_id,
+      users.name AS reporter_name,
+      users.role AS reporter_role
 
+    FROM orders
+    JOIN users
+    ON orders.reporter_id = users.id
+    WHERE orders.type = ${type}
+    AND orders.status = ${status}
 
-//   ORDER BY orders.created_at ${
-//     sort === "newest" ? sql`DESC` : sql`ASC`
-//   }
-// `;
+    ORDER BY orders.created_at ${sort === "newest" ? sql`DESC` : sql`ASC`}
+  `;
+  } else if (type) {
+    result = await sql`
+    SELECT 
+      orders.id,
+      orders.title,
+      orders.description,
+      orders.type,
+      orders.status,
+      orders.created_at,
+      orders.updated_at,
 
-const result = await sql`
-  SELECT 
-    orders.id,
-    orders.title,
-    orders.description,
-    orders.type,
-    orders.status,
-    orders.created_at,
-    orders.updated_at,
+      users.id AS reporter_id,
+      users.name AS reporter_name,
+      users.role AS reporter_role
 
-    users.id AS reporter_id,
-    users.name AS reporter_name,
-    users.role AS reporter_role
+    FROM orders
+    JOIN users
+    ON orders.reporter_id = users.id
 
-  FROM orders
-  JOIN users
-  ON orders.reporter_id = users.id
+    WHERE orders.type = ${type}
 
-  ${
-    type || status
-      ? sql`WHERE`
-      : sql``
+    ORDER BY orders.created_at ${sort === "newest" ? sql`DESC` : sql`ASC`}
+  `;
+  } else if (status) {
+    result = await sql`
+    SELECT 
+      orders.id,
+      orders.title,
+      orders.description,
+      orders.type,
+      orders.status,
+      orders.created_at,
+      orders.updated_at,
+
+      users.id AS reporter_id,
+      users.name AS reporter_name,
+      users.role AS reporter_role
+
+    FROM orders
+    JOIN users
+    ON orders.reporter_id = users.id
+
+    WHERE orders.status = ${status}
+
+    ORDER BY orders.created_at ${sort === "newest" ? sql`DESC` : sql`ASC`}
+  `;
+  } else {
+    result = await sql`
+    SELECT 
+      orders.id,
+      orders.title,
+      orders.description,
+      orders.type,
+      orders.status,
+      orders.created_at,
+      orders.updated_at,
+
+      users.id AS reporter_id,
+      users.name AS reporter_name,
+      users.role AS reporter_role
+
+    FROM orders
+    JOIN users
+    ON orders.reporter_id = users.id
+
+    ORDER BY orders.created_at ${sort === "newest" ? sql`DESC` : sql`ASC`}
+  `;
   }
-
-  ${
-    type
-      ? sql`orders.type = ${type}`
-      : sql``
-  }
-
-  ${
-    type && status
-      ? sql`AND`
-      : sql``
-  }
-
-  ${
-    status
-      ? sql`orders.status = ${status}`
-      : sql``
-  }
-
-  ORDER BY orders.created_at ${
-    sort === "newest" ? sql`DESC` : sql`ASC`
-  }
-`;
 
   const data = result.map((item) => ({
     id: item.id,
@@ -113,7 +125,6 @@ const issuesCreateIntoDB = async (payload: Issue, id: number) => {
 
   const userId = id;
 
-  // try to implement repoter_id from jwt token in header
   const result = await sql`
   INSERT INTO orders (
     title,
@@ -176,10 +187,11 @@ const issuesGetSingelIntoDb = async (id: string) => {
   return data;
 };
 
-const issuesUpdateIntoDb = async (payload: Issue, id: string, user: any) => {
+const issuesUpdateIntoDb = async (payload: Issue, id: string, user: IUser) => {
   const issueId = Number(id);
 
   const { id: userId, role } = user;
+  const { title, description, type, status } = payload;
 
   // Find Issue
   const findIssue = await sql`
@@ -194,7 +206,6 @@ const issuesUpdateIntoDb = async (payload: Issue, id: string, user: any) => {
     throw new Error("Issue not found.");
   }
 
-  // contributor
   if (role === USER_ROLE.contributor) {
     if (issue.reporter_id !== userId) {
       throw new Error("Access denied.");
@@ -204,30 +215,104 @@ const issuesUpdateIntoDb = async (payload: Issue, id: string, user: any) => {
       throw new Error("Only open issues can be updated.");
     }
 
-    const { title, description, type } = payload;
+    let updatedIssue;
 
-    const updatedIssue = await sql`
-      UPDATE orders
-      SET
-        title = ${title},
-        description = ${description},
-        type = ${type}
-      WHERE id = ${issueId}
-      RETURNING *
-    `;
+    // title + description + type
+    if (title && description && type) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          title = ${title},
+          description = ${description},
+          type = ${type}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    }
+
+    // title + description
+    else if (title && description) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          title = ${title},
+          description = ${description}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    }
+
+    // title + type
+    else if (title && type) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          title = ${title},
+          type = ${type}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    }
+
+    // description + type
+    else if (description && type) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          description = ${description},
+          type = ${type}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    }
+
+    // only title
+    else if (title) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          title = ${title}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    }
+
+    // only description
+    else if (description) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          description = ${description}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    }
+
+    // only type
+    else if (type) {
+      updatedIssue = await sql`
+        UPDATE orders
+        SET
+          type = ${type}
+        WHERE id = ${issueId}
+        RETURNING *
+      `;
+    } else {
+      throw new Error("No fields provided.");
+    }
 
     return updatedIssue[0];
   }
 
   if (role === USER_ROLE.maintainer) {
-    const { title, description, type, status } = payload;
+    if (status === undefined) {
+      throw new Error("No fields provided.");
+      return;
+    }
 
     const updatedIssue = await sql`
       UPDATE orders
       SET
-        title = ${title},
-        description = ${description},
-        type = ${type},
         status = ${status}
       WHERE id = ${issueId}
       RETURNING *

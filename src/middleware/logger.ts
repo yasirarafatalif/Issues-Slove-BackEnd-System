@@ -21,7 +21,7 @@ IP     : ${req.ip}
   // Save Log File
   fs.appendFile(logFilePath, logMessage, (err) => {
     if (err) {
-      console.error("Logger Error:", err);
+      // console.error("Logger Error:", err);
     }
   });
 

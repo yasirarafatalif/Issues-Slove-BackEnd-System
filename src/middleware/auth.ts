@@ -18,16 +18,14 @@ export const authMiddleware = () => {
         });
       }
 
-      const decode = verifyToken(token as string, "refresh");
+      const decode = verifyToken(token as string, "access");
       const findUser = await sql`
-  SELECT id, name, email, role
-  FROM users
-  WHERE email = ${decode.email}
-`;
+          SELECT id, name, email, role
+          FROM users
+          WHERE email = ${decode.email}
+          `;
 
       const user = findUser[0];
-      // console.log(user)
-
       if (!findUser) {
         return res.status(401).json({
           success: false,
@@ -35,10 +33,11 @@ export const authMiddleware = () => {
           error: "User Not found",
         });
       }
+    //  req.user = decode;
       (req as any).user = user;
       next();
     } catch (error: any) {
-      console.log(error);
+      // console.log(error);
       res.status(401).json({
         success: false,
         message: "Unauthorized",

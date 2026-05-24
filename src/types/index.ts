@@ -11,6 +11,7 @@ export type User = {
   password: string;
   role?: ROLES;
   email: string;
+  id?:number
 };
 
 export type JwtPayloadType = {
